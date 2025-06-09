@@ -17,5 +17,11 @@ def add_product():
     products.append(new_product)
     return jsonify(new_product), 201
 
+@app.route("/health", methods=["GET"])
+def health_check():
+    # You can add logic here to check database connections, external services, etc.
+    # For a basic health check, just returning 200 OK is sufficient.
+    return jsonify({"status": "ok"}), 200
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

@@ -1,132 +1,117 @@
-// Jenkinsfile pour déployer une API Python avec Docker et Helm sur Kubernetes
-// Ce pipeline Jenkins construit une image Docker, la pousse vers Docker Hub, et déploie l'application sur Kubernetes en utilisant Helm.
-// Assurez-vous que Jenkins a les plugins nécessaires : Docker, Kubernetes, Helm, Git, et Pipeline.
-// Assurez-vous également que les credentials Docker Hub et kubeconfig sont configurés dans Jenkins.
-// Remplacez les valeurs des variables d'environnement par celles de votre projet.
-// Ce pipeline est conçu pour être utilisé avec Jenkins Pipeline (Jenkinsfile) et nécessite que Jenkins soit configuré avec les plugins nécessaires.
-// Assurez-vous que Jenkins a accès à Docker et Kubernetes, et que les credentials sont correctement configurés.
-// Ce pipeline est un exemple de base et peut être adapté selon vos besoins spécifiques.
+// Jenkinsfile
+
 pipeline {
-    agent any // Ou un agent spécifique comme 'agent { label 'docker-host' }' si tu as des runners Jenkins spécifiques
+    agent any // Or a specific agent label if you have one, e.g., { label 'docker-builder' }
 
     environment {
-        DOCKER_ID = "tdksoft"
-        DOCKER_IMAGE_NAME = "${DOCKER_ID}/my-python-api" // Ton compte Docker Hub et le nom de l'image
-        DOCKER_TAG = "v.${BUILD_ID}.0"
-    
+        // Define your Docker image details
+        DOCKER_ID = "tdksoft" 
+        IMAGE_NAME = "${DOCKER_ID}/my-python-api"
 
-        KUBERNETES_KUBECONFIG_ID = "config" // ID de la credential Secret File pour kubeconfig
-        KUBERNETES_CONTEXT = "default" 
-        HELM_CHART_PATH = "helm" // Le chemin vers ton Helm Chart
+        // Dynamically get the short Git commit SHA for the image tag
+        // This is a common way to version images in CI/CD
+        IMAGE_TAG = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+
+        // Path to your application's Dockerfile and source code relative to the Jenkins workspace root
+        APP_SOURCE_DIR = 'helm-deployment-kubernetes' 
+        
+        // Path to your Helm chart directory relative to the Jenkins workspace root
+        HELM_CHART_PATH = 'helm-deployment-kubernetes/helm'
+
+        // Helm release name
+        HELM_RELEASE_NAME = 'my-python-app'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                git branch: 'main', url: 'https://github.com/kehe0014/helm-deployment-kubernetes.git'
+                // Ensure your SCM (e.g., Git) is checked out at the beginning
+                // If this Jenkinsfile is in your Git repo, this is usually automatic.
+                // Otherwise, add a 'checkout scm' step here.
+                echo "Checking out Git repository..."
             }
         }
 
         stage('Build Docker Image') {
-            environment {
-                DOCKER_PASS = credentials("DOCKER_HUB_PASS") // On récupère le mot de passe Docker Hub depuis les credentials Jenkins
-            }
             steps {
                 script {
-                    def dockerImageTag = "${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
-                    echo "Building Docker image: ${dockerImageTag}"
-                    sh """
-                        docker login -u $DOCKER_ID -p $DOCKER_PASS
-                        docker build -t ${dockerImageTag} .
-                        docker tag ${dockerImageTag} ${env.DOCKER_IMAGE_NAME}:latest
-                    """
-                    env.IMAGE_TAG_FOR_DEPLOY = env.BUILD_NUMBER
+                    // Navigate to the directory containing your Dockerfile
+                    dir("${APP_SOURCE_DIR}") {
+                        echo "Building Docker image: ${IMAGE_NAME}:${IMAGE_TAG}"
+                        // Using 'docker build' directly for clarity and common practice in CI/CD
+                        sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                    }
                 }
             }
         }
-        stage('Push Docker Image to Docker Hub') {
-            environment {
-                DOCKER_PASS = credentials("DOCKER_HUB_PASS") // On récupère le mot de passe Docker Hub depuis les credentials Jenkins
-            }
+
+        stage('Push Docker Image') {
             steps {
                 script {
-                    echo "Pushing Docker image to Docker Hub..."
+                    echo "Pushing Docker image: ${IMAGE_NAME}:${IMAGE_TAG}"
+                    // Login to Docker Hub using environment variables
                     sh """
-                        docker push ${env.DOCKER_IMAGE_NAME}:${env.IMAGE_TAG_FOR_DEPLOY}
-                        docker push ${env.DOCKER_IMAGE_NAME}:latest
+                        docker login -u ${env.DOCKER_HUB_USER} -p ${env.DOCKER_PASS}
+                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
                     """
                 }
             }
+            
         }
         
+        environment {
+            // Assuming 'config' is the ID of your Jenkins credential containing the kubeconfig file
+            KUBECONFIG = credentials('config')  // Jenkins will expose this as a temporary file path
+        }
+
         stage('Deploy to Kubernetes with Helm') {
             steps {
                 script {
-                    echo "Déploiement vers Kubernetes avec Helm..."
+                    echo "Deploying Helm chart: ${HELM_CHART_PATH} with image ${IMAGE_NAME}:${IMAGE_TAG}"
                     
-                    withCredentials([file(credentialsId: env.KUBERNETES_KUBECONFIG_ID, variable: 'KUBECONFIG_FILE')]) {
-                        // Verify cluster access first
-                        sh """
-                            export KUBECONFIG=${KUBECONFIG_FILE}
-                            kubectl config use-context ${env.KUBERNETES_CONTEXT}
-                            kubectl cluster-info
-                        """
+                    sh """
+                        # Verify cluster access (optional)
+                        kubectl cluster-info
                         
-                        // Deploy with Helm
-                        sh """
-                            export KUBECONFIG=${KUBECONFIG_FILE}
-                            helm upgrade --install my-python-app ${env.HELM_CHART_PATH} \\
-                                --set image.repository=${env.DOCKER_IMAGE_NAME} \\
-                                --set image.tag=${env.IMAGE_TAG_FOR_DEPLOY} \\
-                                --wait \\
-                                --timeout 300s \\
-                                --debug
-                        """
-                        
-                        // Verify deployment
-                        sh """
-                            kubectl rollout status deployment/my-python-app --timeout=120s
-                            kubectl get pods -l app.kubernetes.io/name=my-python-app
-                        """
-                    }
+                        # Helm deployment
+                        helm upgrade --install ${HELM_RELEASE_NAME} ${HELM_CHART_PATH} \\
+                        #  --namespace ${NAMESPACE} \\  # Always specify namespace
+                          --set image.repository=${IMAGE_NAME} \\
+                          --set image.tag=${IMAGE_TAG} \\
+                          --set serviceAccount.create=true \\
+                          --wait \\
+                          --timeout 5m
+                    """
                 }
             }
         }
-
-        stage('Run Helm Tests (Optional)') {
+        // Optional: Post-deployment smoke tests or verification
+        stage('Verify Deployment') {
             steps {
                 script {
-                    echo "Running Helm tests..."
-                    withCredentials([file(credentialsId: env.KUBERNETES_KUBECONFIG_ID, variable: 'KUBECONFIG_FILE')]) {
-                        sh """
-                            # Définir KUBECONFIG pour pointer vers le fichier temporaire
-                            export KUBECONFIG=${KUBECONFIG_FILE}
-                            kubectl config use-context ${env.KUBERNETES_CONTEXT}
-                            helm test my-python-app
-                        """
-                    }
-                    echo "Helm tests finished."
+                    echo "Verifying deployment..."
+                    // Example: wait for a pod to be ready and then run a simple curl to the service
+                    sh "kubectl rollout status deployment/${HELM_RELEASE_NAME}-my-api-chart --timeout=120s"
+                    // Add more checks if needed, e.g.:
+                    // sh "kubectl exec deployment/${HELM_RELEASE_NAME}-my-api-chart -- curl -s http://localhost:5000/health"
                 }
             }
         }
-    } // Fin des stages
+    }
 
-    post { // La section 'post' doit être un enfant direct du bloc 'pipeline'
+    post {
         always {
             echo "Pipeline finished."
         }
-        failure {
-            echo "Pipeline failed! Check logs for details."
-        }
         success {
-            echo "Pipeline succeeded!"
+            echo "Pipeline successful!"
+            // Add Slack notification or other success actions
         }
-        unstable {
-            echo "Pipeline completed with warnings."
+        failure {
+            echo "Pipeline failed!"
+            // Add Slack notification or other failure actions
         }
-        cleanup {
-            echo "Cleaning up resources..."
-            // Ici, tu peux ajouter des étapes de nettoyage si nécessaire, comme supprimer des images Docker temporaires ou des ressources Kubernetes.
-        }
-    } // Fin du post
-} // Fin du pipeline
+        // clean up workspace
+        // cleanWs()
+    }
+}
