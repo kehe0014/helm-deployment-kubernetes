@@ -94,8 +94,10 @@ pipeline {
                         
                         sh """
                             # Set Kubernetes context if needed
-                            kubectl config use-context ${envName}-cluster
+                            # kubectl config use-context ${envName}-cluster
                             
+                            kubectl config use-context default
+                            kubectl config current-context || echo "No current context set, using default"
                             # Create namespace if it doesn't exist
                             kubectl get namespace ${namespace} || kubectl create namespace ${namespace}
                             
