@@ -20,14 +20,13 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    dir('helm-deployment-kubernetes') { // This changes the current directory
-                        echo "Building Docker image: tdksoft/my-python-api:${env.BUILD_NUMBER}" // Using BUILD_NUMBER as a tag is better than short SHA for continuous builds
-                        // --- ADD THIS FOR DEBUGGING ---
-                        sh 'pwd' // Print current working directory
-                        sh 'ls -R' // List all files and directories recursively
-                        // -----------------------------
-                        sh "docker build -t tdksoft/my-python-api:${env.BUILD_NUMBER} ."
-                    }
+                    // Remove the 'dir' block
+                    echo "Building Docker image: tdksoft/my-python-api:${env.BUILD_NUMBER}"
+                    // For debugging, you can keep these initially to confirm
+                    sh 'pwd'
+                    sh 'ls -R'
+                    // Now, docker build will execute from the workspace root
+                    sh "docker build -t tdksoft/my-python-api:${env.BUILD_NUMBER} ."
                 }
             }
         }
