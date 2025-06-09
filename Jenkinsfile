@@ -58,7 +58,6 @@ pipeline {
 
                         # Helm deployment
                         helm upgrade --install ${HELM_RELEASE_NAME} ${HELM_CHART_PATH} \\
-                          --namespace ${NAMESPACE} \\  # Uncomment when NAMESPACE is defined
                           --set image.repository=${IMAGE_NAME} \\
                           --set image.tag=${IMAGE_TAG} \\
                           --set serviceAccount.create=true \\
