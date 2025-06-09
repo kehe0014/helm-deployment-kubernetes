@@ -28,20 +28,20 @@ pipeline {
         }
 
         stage('Build Docker Image') {
+            environment {
+            DOCKER_PASS = credentials("DOCKER_HUB_PASS") // we retrieve docker password from secret text called docker_hub_pass saved on jenkins
+           }
             steps {
                 script {
                     def dockerImageTag = "${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
                     echo "Building Docker image: ${dockerImageTag}"
-
-                    // Login à Docker Hub
-                    // ATTENTION: La variable DOCKER_PASS doit être définie avec withCredentials ici, pas dans un bloc environment global
-                    // L'accès aux credentials doit se faire à l'intérieur d'un bloc steps ou script.
-                    withCredentials([usernamePassword(credentialsId: env.DOCKER_REGISTRY_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"
-                        sh "docker build -t ${dockerImageTag} ."
-                        sh "docker push ${dockerImageTag}"
+                     script {
+                        sh '''
+                        docker login -u $DOCKER_ID -p $DOCKER_PASS
+                        docker build -t  ${dockerImageTag} .
+                        docker push  ${dockerImageTag}
+                        '''
                     }
-
                     // Stocke le tag de l'image construite pour les étapes ultérieures (déploiement)
                     env.IMAGE_TAG_FOR_DEPLOY = env.BUILD_NUMBER
                 }
