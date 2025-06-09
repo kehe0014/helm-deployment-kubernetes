@@ -22,6 +22,14 @@ service:
   port: 5000 # Le port sur lequel ton application Python écoute (ex: Flask)
   # http://localhost:5000 ou http://<adresse-ip-du-pod>:5000
 
+autoscaling:
+  enabled: false # Mettez à 'true' si vous voulez activer l'autoscaling par défaut
+  # Si 'enabled: true', vous devrez aussi définir minReplicas, maxReplicas, targetCPUUtilizationPercentage
+  # minReplicas: 1
+  # maxReplicas: 5
+  # targetCPUUtilizationPercentage: 80
+  # Si 'enabled: false', l'autoscaling ne sera pas activé et le nombre de réplicas sera celui défini par replicaCount.
+
 ingress:
   enabled: false
   className: ""
