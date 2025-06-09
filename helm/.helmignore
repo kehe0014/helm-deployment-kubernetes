@@ -1,0 +1,24 @@
+# Patterns for files to ignore when packaging a chart.
+# This field accepts regular expressions.
+
+# Common VCS ignores
+.DS_Store
+.git/
+.gitignore
+.bzr/
+.bzrignore
+.hg/
+.hgignore
+.svn/
+.svignore
+
+# Common IDE ignores
+.idea/
+.vscode/
+
+# Build outputs
+*.tgz
+*.tar.gz
+
+# Charts directory itself
+charts/

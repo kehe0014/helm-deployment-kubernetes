@@ -1,0 +1,65 @@
+# Fichiers et dossiers généraux à ignorer
+.DS_Store
+.env
+.venv
+/venv
+/env
+*.pyc
+__pycache__/
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+*.zip
+*.tar.gz
+htmlcov/
+.tox/
+.coverage
+.cache/
+.pytest_cache/
+.mypy_cache/
+
+# Fichiers spécifiques au système d'exploitation
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Fichiers spécifiques aux IDE/éditeurs
+.idea/             # PyCharm
+.vscode/           # VS Code
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+*.komodoproject
+*.kpf
+*.gedit-save
+*.swp
+*.bak
+*.orig
+*~
+.#*
+*.pyo
+
+# Fichiers de données (si non versionnés)
+# database.sqlite3
+# media/
+# staticfiles/
+
+# Fichiers de configuration sensibles
+# config.ini
+# settings.py
+# .flaskenv
+# .npmrc
+# .htpasswd
+
+# Journalisation
+*.log
+*.sqlite3-journal
+
+# Cahiers Jupyter
+.ipynb_checkpoints/

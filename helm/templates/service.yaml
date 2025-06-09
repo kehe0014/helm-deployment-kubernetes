@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: { { include "my-api-chart.fullname" . } }
+  labels: { { - include "my-api-chart.labels" . | nindent 4 } }
+spec:
+  type: { { .Values.service.type } }
+  ports:
+    - port: { { .Values.service.port } }
+      targetPort: http # Fait référence au nom du port dans le conteneur du Deployment
+      protocol: TCP
+      name: http
+  selector: { { - include "my-api-chart.selectorLabels" . | nindent 4 } }

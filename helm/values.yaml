@@ -1,0 +1,53 @@
+# Default values for my-api-chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 2 # Le nombre de réplicas de ton application Python. 2 est un bon choix pour la haute disponibilité.
+# Si tu veux plus de réplicas, augmente ce nombre. Si tu veux moins, diminue-le.
+# Si tu veux un seul pod, mets 1. Si tu veux 3 pods, mets 3. etc.
+
+image:
+  repository: tdksoft/my-python-api # chemin complet d'image Docker
+  # Remplace par le nom de ton image Docker
+  # GitLab Container Registry on a qq chose du genre : registry.gitlab.com/ton-groupe/ton-projet/ton-image-api
+  # Si tu utilises un registre privé, ajoute le nom d'utilisateur et le mot de passe dans les secrets Kubernetes.
+  # Exemple: myregistry/my-python-api
+  # Si tu utilises un registre public, tu peux laisser le nom de l'image sans préfixe.
+  pullPolicy: IfNotPresent # La politique de récupération de l'image. IfNotPresent signifie que l'image sera récupérée si elle n'est pas déjà présente sur le nœud.
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest" # Ou $CI_COMMIT_SHORT_SHA si utilisé avec GitLab CI/CD
+
+service:
+  type: ClusterIP
+  port: 5000 # Le port sur lequel ton application Python écoute (ex: Flask)
+  # http://localhost:5000 ou http://<adresse-ip-du-pod>:5000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations:
+    {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  host: chart-example.local # Remplace par ton hostname
+  paths:
+    - path: /
+      pathType: ImplementationSpecific
+
+resources:
+  {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

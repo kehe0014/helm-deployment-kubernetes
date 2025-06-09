@@ -1,0 +1,6 @@
+apiVersion: v2 # v2 La version de l'API Helm. v2 est standard pour Helm 3.
+name: my-api-chart
+description: Un Helm Chart pour déployer une API Python simple.
+type: application # Le type de Chart, ici c'est une application. service est un autre type de chart
+version: 0.1.0 #La version de ton Chart Helm (indépendante de la version de l'application).
+appVersion: "1.0.0" # La version l'application Python

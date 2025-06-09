@@ -1,0 +1,12 @@
+services:
+  my-python-app:
+    build:
+      context: . # Indique que le Dockerfile se trouve dans le répertoire courant
+      dockerfile: Dockerfile # Spécifie le nom du Dockerfile
+    image: tdksoft/my-python-api:$CI_COMMIT_SHORT_SHA # Le nom de l'image qui sera construite et taguée
+    ports:
+      - "5000:5000" # Mappe le port 5000 du conteneur au port 5000 de l'hôte
+    volumes:
+      - .:/app # Monte le répertoire courant dans /app du conteneur (utile pour le développement)
+    # Ligne de commande que tu as déjà dans ton Dockerfile CMD
+    # command: ["python", "app.py"]
