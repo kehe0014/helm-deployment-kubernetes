@@ -31,6 +31,9 @@ pipeline {
             }
         }
         stage('Push Docker Image') {
+            environment {
+                DOCKER_PASS = credentials("DOCKER_HUB_PASS") // we retrieve docker password from secret text called docker_hub_pass saved on jenkins
+            }
             steps {
                 script {
                     echo "Pushing Docker image: ${IMAGE_NAME}:${IMAGE_TAG}"
