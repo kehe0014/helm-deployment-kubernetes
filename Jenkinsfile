@@ -5,8 +5,7 @@ pipeline {
         DOCKER_ID = "tdksoft"
         IMAGE_NAME = "${DOCKER_ID}/my-python-api"
         IMAGE_TAG = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-        APP_SOURCE_DIR = 'helm-deployment-kubernetes'
-        HELM_CHART_PATH = 'helm-deployment-kubernetes/helm'
+        HELM_CHART_PATH = './helm'
         HELM_RELEASE_NAME = 'my-python-app'
     }
 
@@ -57,7 +56,7 @@ pipeline {
                         kubectl cluster-info
 
                         # Helm deployment
-                        helm upgrade --install ${HELM_RELEASE_NAME} ${HELM_CHART_PATH} \\
+                        helm upgrade --install  ${HELM_CHART_PATH} \\
                           --set image.repository=${IMAGE_NAME} \\
                           --set image.tag=${IMAGE_TAG} \\
                           --set serviceAccount.create=true \\
