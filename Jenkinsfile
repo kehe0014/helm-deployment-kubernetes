@@ -85,6 +85,7 @@ pipeline {
             }
         }
         // Optional: Post-deployment smoke tests or verification
+       '''
         stage('Verify Deployment') {
             steps {
                 script {
@@ -97,6 +98,7 @@ pipeline {
             }
         }
     }
+    '''
 
     post {
         always {
