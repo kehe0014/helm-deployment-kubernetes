@@ -35,7 +35,7 @@ pipeline {
                 script {
                     echo "Pushing Docker image: ${IMAGE_NAME}:${IMAGE_TAG}"
                     sh """
-                        docker login -u ${env.DOCKER_HUB_USER} -p ${env.DOCKER_PASS}
+                        docker login -u ${DOCKER_ID} -p ${DOCKER_PASS}
                         docker push ${IMAGE_NAME}:${IMAGE_TAG}
                     """
                 }
