@@ -10,8 +10,11 @@ pipeline {
     agent any // Ou un agent spécifique comme 'agent { label 'docker-host' }' si tu as des runners Jenkins spécifiques
 
     environment {
-        DOCKER_IMAGE_NAME = "tdksoft/my-python-api" // Ton compte Docker Hub et le nom de l'image
+        DOCKER_ID = "tdksoft"
+        DOCKER_IMAGE_NAME = "${DOCKER_ID}/my-python-api" // Ton compte Docker Hub et le nom de l'image
+        DOCKER_TAG = "v.${BUILD_ID}.0"
         DOCKER_REGISTRY_CREDENTIALS_ID = "dockerhub-tdksoft-credentials" // ID de la credential Docker Hub dans Jenkins
+       
         KUBERNETES_KUBECONFIG_ID = "kubeconfig-prod" // ID de la credential Secret File pour kubeconfig
         KUBERNETES_CONTEXT = "my-kubernetes-context" // Remplace par le nom de ton contexte Kubernetes (ex: minikube)
         HELM_CHART_PATH = "helm" // Le chemin vers ton Helm Chart
@@ -28,13 +31,13 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def dockerImageTag = "${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}" // Utilise le numéro de build Jenkins comme tag
+                    def dockerImageTag = "${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
                     echo "Building Docker image: ${dockerImageTag}"
 
                     // Login à Docker Hub
-                    withCredentials([usernamePassword(credentialsId: env.DOCKER_REGISTRY_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
-                    }
+                    environment {
+                                DOCKER_PASS = credentials("DOCKER_HUB_PASS") // we retrieve docker password from secret text called docker_hub_pass saved on jenkins
+                            }
 
                     // Construire l'image en utilisant le Dockerfile
                     sh "docker build -t ${dockerImageTag} ."
