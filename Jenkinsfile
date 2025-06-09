@@ -13,10 +13,10 @@ pipeline {
         DOCKER_ID = "tdksoft"
         DOCKER_IMAGE_NAME = "${DOCKER_ID}/my-python-api" // Ton compte Docker Hub et le nom de l'image
         DOCKER_TAG = "v.${BUILD_ID}.0"
-        DOCKER_REGISTRY_CREDENTIALS_ID = "dockerhub-tdksoft-credentials" // ID de la credential Docker Hub dans Jenkins
+    
 
-        KUBERNETES_KUBECONFIG_ID = "kubeconfig-prod" // ID de la credential Secret File pour kubeconfig
-        KUBERNETES_CONTEXT = "my-kubernetes-context" // Remplace par le nom de ton contexte Kubernetes (ex: minikube)
+        KUBERNETES_KUBECONFIG_ID = "config" // ID de la credential Secret File pour kubeconfig
+        KUBERNETES_CONTEXT = "default" 
         HELM_CHART_PATH = "helm" // Le chemin vers ton Helm Chart
     }
 
