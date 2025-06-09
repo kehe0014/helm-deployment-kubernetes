@@ -64,23 +64,28 @@ pipeline {
                 script {
                     echo "Déploiement vers Kubernetes avec Helm..."
 
-                    // Utilisation de `withCredentials` pour gérer le Kubeconfig de manière sécurisée
-                    // Le KUBERNETES_KUBECONFIG_ID est déjà défini dans l'environnement du pipeline, on l'utilise ici
                     withCredentials([file(credentialsId: env.KUBERNETES_KUBECONFIG_ID, variable: 'KUBECONFIG_FILE')]) {
                         sh """
                             echo "Configuration du Kubeconfig..."
-                            # Créer le répertoire .kube s'il n'existe pas
-                            mkdir -p ~/.kube
-                            # Copier le fichier Kubeconfig fourni par Jenkins dans le bon emplacement
-                            cp "${KUBECONFIG_FILE}" ~/.kube/config
+                            
+                            # Nettoyer les variables Kubeconfig existantes pour éviter les conflits
+                            unset KUBECONFIG || true 
+
+                            # Définir KUBECONFIG pour pointer vers le fichier temporaire
+                            export KUBECONFIG="${KUBECONFIG_FILE}"
+                            
+                            # Vérifier que le fichier est lisible (débogage)
+                            ls -l ${KUBECONFIG_FILE}
+                            
                             echo "Kubeconfig configuré."
+                            
                             # Sélectionner le bon contexte Kubernetes
                             kubectl config use-context "${env.KUBERNETES_CONTEXT}"
                         """
                         // Exécuter la commande Helm
-                        // --install : installe si la release n'existe pas, met à jour sinon
-                        // --wait : attend que toutes les ressources soient dans un état prêt avant de considérer le déploiement comme réussi
                         sh """
+                            # Assurez-vous que KUBECONFIG est toujours exporté pour Helm aussi
+                            export KUBECONFIG="${KUBECONFIG_FILE}"
                             helm upgrade --install my-python-app "${env.HELM_CHART_PATH}" \\
                                 --set image.repository="${env.DOCKER_IMAGE_NAME}" \\
                                 --set image.tag="${env.IMAGE_TAG_FOR_DEPLOY}" \\
@@ -97,11 +102,13 @@ pipeline {
             steps {
                 script {
                     echo "Running Helm tests..."
-                    // Utilisation de withCredentials pour Kubeconfig ici aussi
                     withCredentials([file(credentialsId: env.KUBERNETES_KUBECONFIG_ID, variable: 'KUBECONFIG_FILE')]) {
-                        sh "export KUBECONFIG=${KUBECONFIG_FILE}"
-                        sh "kubectl config use-context ${env.KUBERNETES_CONTEXT}"
-                        sh "helm test my-python-app" // 'my-python-app' est le nom de ta release Helm
+                        sh """
+                            # Définir KUBECONFIG pour pointer vers le fichier temporaire
+                            export KUBECONFIG=${KUBECONFIG_FILE}
+                            kubectl config use-context ${env.KUBERNETES_CONTEXT}
+                            helm test my-python-app
+                        """
                     }
                     echo "Helm tests finished."
                 }
