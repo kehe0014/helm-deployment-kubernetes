@@ -50,27 +50,33 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes with Helm') {
-            steps {
+          steps {
                 script {
-                    echo "Deploying to Kubernetes using Helm..."
+                        echo "Déploiement vers Kubernetes avec Helm..."
 
-                    // Utilisation du kubeconfig depuis Jenkins Credentials
-                    // Le fichier kubeconfig sera temporairement disponible dans l'environnement de build
-                    withCredentials([file(credentialsId: env.KUBERNETES_KUBECONFIG_ID, variable: 'KUBECONFIG_FILE')]) {
-                        // Exporte KUBECONFIG pour que kubectl et helm puissent le trouver
-                        sh "export KUBECONFIG=${KUBECONFIG_FILE}"
-                        // Choisir le contexte Kubernetes
-                        sh "kubectl config use-context ${env.KUBERNETES_CONTEXT}"
+                        // Utilisation de `withCredentials` pour gérer le Kubeconfig de manière sécurisée
+                        withCredentials([file(credentialsId: 'config', variable: 'KUBECONFIG_FILE')]) {
+                            sh """
+                                echo "Configuration du Kubeconfig..."
+                                # Créer le répertoire .kube s'il n'existe pas
+                                mkdir -p ~/.kube
+                                # Copier le fichier Kubeconfig fourni par Jenkins dans le bon emplacement
+                                cp "${KUBECONFIG_FILE}" ~/.kube/config
+                                echo "Kubeconfig configuré."
+                            """
 
-                        // Exécuter la commande Helm
-                        // --install : installe si la release n'existe pas, met à jour sinon
-                        // --wait : attend que toutes les ressources soient dans un état prêt avant de considérer le déploiement comme réussi
-                        sh "helm upgrade --install my-python-app ${env.HELM_CHART_PATH} " +
-                           "--set image.repository=${env.DOCKER_IMAGE_NAME} " +
-                           "--set image.tag=${env.IMAGE_TAG_FOR_DEPLOY} " +
-                           "--wait"
+                            // Exécuter la commande Helm
+                            // --install : installe si la release n'existe pas, met à jour sinon
+                            // --wait : attend que toutes les ressources soient dans un état prêt avant de considérer le déploiement comme réussi
+                            sh """
+                                helm upgrade --install my-python-app "${env.HELM_CHART_PATH}" \\
+                                    --set image.repository="${env.DOCKER_IMAGE_NAME}" \\
+                                    --set image.tag="${env.IMAGE_TAG_FOR_DEPLOY}" \\
+                                    --wait
+                            """
+                        } // Fin de withCredentials
 
-                        echo "Helm deployment completed."
+                        echo "Déploiement Helm terminé."
                     }
                 }
             }
