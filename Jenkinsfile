@@ -20,8 +20,8 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/ton-utilisateur/ton-repo.git' // Remplace par ton repo GitHub/GitLab
-                // Assure-toi que ton Dockerfile, app.py, requirements.txt et le dossier helm sont dans ce repo
+                git branch: 'main', url: 'https://github.com/kehe0014/helm-deployment-kubernetes.git'
+               
             }
         }
 
