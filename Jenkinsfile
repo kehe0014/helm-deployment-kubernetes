@@ -63,37 +63,32 @@ pipeline {
             steps {
                 script {
                     echo "Déploiement vers Kubernetes avec Helm..."
-
+                    
                     withCredentials([file(credentialsId: env.KUBERNETES_KUBECONFIG_ID, variable: 'KUBECONFIG_FILE')]) {
+                        // Verify cluster access first
                         sh """
-                            echo "Configuration du Kubeconfig..."
-                            
-                            # Nettoyer les variables Kubeconfig existantes pour éviter les conflits
-                            unset KUBECONFIG || true 
-
-                            # Définir KUBECONFIG pour pointer vers le fichier temporaire
-                            export KUBECONFIG="${KUBECONFIG_FILE}"
-                            
-                            # Vérifier que le fichier est lisible (débogage)
-                            ls -l ${KUBECONFIG_FILE}
-                            
-                            echo "Kubeconfig configuré."
-                            
-                            # Sélectionner le bon contexte Kubernetes
-                            kubectl config use-context "${env.KUBERNETES_CONTEXT}"
+                            export KUBECONFIG=${KUBECONFIG_FILE}
+                            kubectl config use-context ${env.KUBERNETES_CONTEXT}
+                            kubectl cluster-info
                         """
-                        // Exécuter la commande Helm
+                        
+                        // Deploy with Helm
                         sh """
-                            # Assurez-vous que KUBECONFIG est toujours exporté pour Helm aussi
-                            export KUBECONFIG="${KUBECONFIG_FILE}"
-                            helm upgrade --install my-python-app "${env.HELM_CHART_PATH}" \\
-                                --set image.repository="${env.DOCKER_IMAGE_NAME}" \\
-                                --set image.tag="${env.IMAGE_TAG_FOR_DEPLOY}" \\
-                                --wait
+                            export KUBECONFIG=${KUBECONFIG_FILE}
+                            helm upgrade --install my-python-app ${env.HELM_CHART_PATH} \\
+                                --set image.repository=${env.DOCKER_IMAGE_NAME} \\
+                                --set image.tag=${env.IMAGE_TAG_FOR_DEPLOY} \\
+                                --wait \\
+                                --timeout 300s \\
+                                --debug
                         """
-                    } // Fin de withCredentials pour Kubeconfig
-
-                    echo "Déploiement Helm terminé."
+                        
+                        // Verify deployment
+                        sh """
+                            kubectl rollout status deployment/my-python-app --timeout=120s
+                            kubectl get pods -l app.kubernetes.io/name=my-python-app
+                        """
+                    }
                 }
             }
         }
