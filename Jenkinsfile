@@ -29,25 +29,36 @@ pipeline {
 
         stage('Build Docker Image') {
             environment {
-            DOCKER_PASS = credentials("DOCKER_HUB_PASS") // we retrieve docker password from secret text called docker_hub_pass saved on jenkins
-           }
+                DOCKER_PASS = credentials("DOCKER_HUB_PASS") // On récupère le mot de passe Docker Hub depuis les credentials Jenkins
+            }
             steps {
                 script {
                     def dockerImageTag = "${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
                     echo "Building Docker image: ${dockerImageTag}"
-                     script {
-                        sh '''
+                    sh """
                         docker login -u $DOCKER_ID -p $DOCKER_PASS
-                        docker build -t  ${dockerImageTag} .
-                        docker push  ${dockerImageTag}
-                        '''
-                    }
-                    // Stocke le tag de l'image construite pour les étapes ultérieures (déploiement)
+                        docker build -t ${dockerImageTag} .
+                        docker tag ${dockerImageTag} ${env.DOCKER_IMAGE_NAME}:latest
+                    """
                     env.IMAGE_TAG_FOR_DEPLOY = env.BUILD_NUMBER
                 }
             }
         }
-
+        stage('Push Docker Image to Docker Hub') {
+            environment {
+                DOCKER_PASS = credentials("DOCKER_HUB_PASS") // On récupère le mot de passe Docker Hub depuis les credentials Jenkins
+            }
+            steps {
+                script {
+                    echo "Pushing Docker image to Docker Hub..."
+                    sh """
+                        docker push ${env.DOCKER_IMAGE_NAME}:${env.IMAGE_TAG_FOR_DEPLOY}
+                        docker push ${env.DOCKER_IMAGE_NAME}:latest
+                    """
+                }
+            }
+        }
+        
         stage('Deploy to Kubernetes with Helm') {
             steps {
                 script {
