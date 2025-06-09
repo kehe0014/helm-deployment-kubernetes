@@ -56,7 +56,7 @@ pipeline {
                         kubectl cluster-info
 
                         # Helm deployment
-                        helm upgrade --install  ${HELM_CHART_PATH} \\
+                        helm upgrade --install ${HELM_RELEASE_NAME} ${HELM_CHART_PATH} \\
                           --set image.repository=${IMAGE_NAME} \\
                           --set image.tag=${IMAGE_TAG} \\
                           --set serviceAccount.create=true \\
