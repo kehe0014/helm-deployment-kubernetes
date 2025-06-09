@@ -20,14 +20,17 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    dir("${APP_SOURCE_DIR}") {
-                        echo "Building Docker image: ${IMAGE_NAME}:${IMAGE_TAG}"
-                        sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                    dir('helm-deployment-kubernetes') { // This changes the current directory
+                        echo "Building Docker image: tdksoft/my-python-api:${env.BUILD_NUMBER}" // Using BUILD_NUMBER as a tag is better than short SHA for continuous builds
+                        // --- ADD THIS FOR DEBUGGING ---
+                        sh 'pwd' // Print current working directory
+                        sh 'ls -R' // List all files and directories recursively
+                        // -----------------------------
+                        sh "docker build -t tdksoft/my-python-api:${env.BUILD_NUMBER} ."
                     }
                 }
             }
         }
-
         stage('Push Docker Image') {
             steps {
                 script {
