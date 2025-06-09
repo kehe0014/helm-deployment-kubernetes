@@ -18,6 +18,9 @@ pipeline {
         }
 
         stage('Build Docker Image') {
+            environment {
+                DOCKER_PASS = credentials("DOCKER_HUB_PASS") // we retrieve docker password from secret text called docker_hub_pass saved on jenkins
+            }
             steps {
                 script {
                     // Remove the 'dir' block
@@ -27,20 +30,8 @@ pipeline {
                     sh 'ls -R'
                     // Now, docker build will execute from the workspace root
                     sh "docker build -t tdksoft/my-python-api:${env.BUILD_NUMBER} ."
-                }
-            }
-        }
-        stage('Push Docker Image') {
-            environment {
-                DOCKER_PASS = credentials("DOCKER_HUB_PASS") // we retrieve docker password from secret text called docker_hub_pass saved on jenkins
-            }
-            steps {
-                script {
-                    echo "Pushing Docker image: ${IMAGE_NAME}:${IMAGE_TAG}"
-                    sh """
-                        docker login -u ${DOCKER_ID} -p ${DOCKER_PASS}
-                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
-                    """
+                    sh "docker login -u ${DOCKER_ID} -p ${DOCKER_PASS}"
+                    sh   "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
         }
