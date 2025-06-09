@@ -106,11 +106,14 @@ pipeline {
             success {
                 echo "Pipeline succeeded!"
             }
-            // Clean up Docker login
-            // withCredentials([usernamePassword(credentialsId: env.DOCKER_REGISTRY_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-            //     sh "docker logout"
-            // }
-        } 
+            unstable {
+                echo "Pipeline completed with warnings."
+            }
+            cleanup {
+                echo "Cleaning up resources..."
+                // Ici, tu peux ajouter des étapes de nettoyage si nécessaire, comme supprimer des images Docker temporaires ou des ressources Kubernetes.
+           } 
+        } // Fin du post
 
-        } // Fin des stages
+       } // Fin des stages
     } // Fin du pipeline
