@@ -5,7 +5,7 @@ pipeline {
 
     environment {
         // Define your Docker image details
-        DOCKER_ID = "tdksoft" 
+        DOCKER_ID = "tdksoft"
         IMAGE_NAME = "${DOCKER_ID}/my-python-api"
 
         // Dynamically get the short Git commit SHA for the image tag
@@ -13,8 +13,8 @@ pipeline {
         IMAGE_TAG = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
 
         // Path to your application's Dockerfile and source code relative to the Jenkins workspace root
-        APP_SOURCE_DIR = 'helm-deployment-kubernetes' 
-        
+        APP_SOURCE_DIR = 'helm-deployment-kubernetes'
+
         // Path to your Helm chart directory relative to the Jenkins workspace root
         HELM_CHART_PATH = 'helm-deployment-kubernetes/helm'
 
@@ -58,21 +58,20 @@ pipeline {
             }
             
         }
-        
-        environment {
-            // Assuming 'config' is the ID of your Jenkins credential containing the kubeconfig file
-            KUBECONFIG = credentials('config')  // Jenkins will expose this as a temporary file path
-        }
 
         stage('Deploy to Kubernetes with Helm') {
+            environment {
+                // Assuming 'config' is the ID of your Jenkins credential containing the kubeconfig file
+                KUBECONFIG = credentials('config')  // Jenkins will expose this as a temporary file path
+            }
             steps {
                 script {
                     echo "Deploying Helm chart: ${HELM_CHART_PATH} with image ${IMAGE_NAME}:${IMAGE_TAG}"
-                    
+
                     sh """
                         # Verify cluster access (optional)
                         kubectl cluster-info
-                        
+
                         # Helm deployment
                         helm upgrade --install ${HELM_RELEASE_NAME} ${HELM_CHART_PATH} \\
                         #  --namespace ${NAMESPACE} \\  # Always specify namespace
